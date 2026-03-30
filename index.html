@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pharma Stock Viewer</title>
+    <meta name="description" content="Mobile-friendly medication stock viewer for PharmaWMS.">
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">PharmaWMS</p>
+                <h1>Medication Stock Viewer</h1>
+                <p class="hero-copy">View current stock, quantities, product codes, batches, and expiry dates from your warehouse sheet in a clean mobile-friendly layout.</p>
+            </div>
+            <button id="refreshButton" class="refresh-button" type="button">Refresh</button>
+        </header>
+
+        <section class="toolbar" aria-label="Filters">
+            <label class="search-field">
+                <span class="sr-only">Search products</span>
+                <input id="searchInput" type="search" placeholder="Search by brand, generic, barcode, or product code">
+            </label>
+            <label class="toggle-field">
+                <input id="stockOnlyToggle" type="checkbox" checked>
+                <span>In stock only</span>
+            </label>
+        </section>
+
+        <section class="stats" aria-label="Stock summary">
+            <article class="stat-card">
+                <span class="stat-label">Products</span>
+                <strong id="productsCount">0</strong>
+            </article>
+            <article class="stat-card">
+                <span class="stat-label">Units In Stock</span>
+                <strong id="unitsCount">0</strong>
+            </article>
+            <article class="stat-card">
+                <span class="stat-label">Low Stock</span>
+                <strong id="lowStockCount">0</strong>
+            </article>
+        </section>
+
+        <section class="status-panel">
+            <p id="statusText">Loading stock data...</p>
+            <p id="updatedText" class="updated-text"></p>
+        </section>
+
+        <section id="errorBanner" class="error-banner hidden" role="alert"></section>
+
+        <main id="inventoryGrid" class="inventory-grid" aria-live="polite"></main>
+    </div>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>
