@@ -6,10 +6,6 @@ Expected GitHub Pages URL:
 
 `https://kingkopra00.github.io/mobile-app`
 
-Worker API:
-
-`https://pharma-worker.alidell993.workers.dev/public-inventory`
-
 Publishing:
 
 1. Push this repository to GitHub.
