@@ -9,10 +9,13 @@ const state = {
     storageRoom: 'all',
     glAccount: 'all',
     selectedKey: null,
+    movementLoadingKey: null,
+    productMovements: {},
     loading: false
 };
 
 const elements = {
+    exportButton: document.getElementById('exportButton'),
     refreshButton: document.getElementById('refreshButton'),
     searchInput: document.getElementById('searchInput'),
     availabilityFilter: document.getElementById('availabilityFilter'),
@@ -55,12 +58,19 @@ elements.refreshButton.addEventListener('click', () => {
     loadInventory(true);
 });
 
+elements.exportButton.addEventListener('click', () => {
+    window.open(buildPublicReportUrl(), '_blank', 'noopener');
+});
+
 elements.inventoryGrid.addEventListener('click', (event) => {
     const card = event.target.closest('[data-product-key]');
     if (!card) return;
 
     const nextKey = card.dataset.productKey;
     state.selectedKey = state.selectedKey === nextKey ? null : nextKey;
+    if (state.selectedKey) {
+        loadProductMovements(state.selectedKey);
+    }
     render();
 });
 
@@ -278,6 +288,12 @@ function renderDetailPanel(visibleProducts) {
         </li>
     `).join('');
 
+    const movementLoading = state.movementLoadingKey === selectedProduct.key;
+    const movementItems = state.productMovements[selectedProduct.key] || [];
+    const movementsMarkup = movementLoading
+        ? '<p class="detail-empty">Loading movement history...</p>'
+        : renderMovementsList(movementItems);
+
     elements.detailPanel.innerHTML = `
         <div class="detail-header">
             <div>
@@ -302,6 +318,13 @@ function renderDetailPanel(visibleProducts) {
             </div>
             <ul class="detail-batch-list">${batches}</ul>
         </div>
+        <div class="detail-section">
+            <div class="detail-section-header">
+                <span>Recent Product Movements</span>
+                <span>${formatNumber(movementItems.length)} records</span>
+            </div>
+            ${movementsMarkup}
+        </div>
     `;
     elements.detailPanel.classList.remove('hidden');
 
@@ -312,6 +335,85 @@ function renderDetailPanel(visibleProducts) {
             render();
         }, { once: true });
     }
+}
+
+function renderMovementsList(movements) {
+    if (!movements.length) {
+        return '<p class="detail-empty">No movement records found for this product.</p>';
+    }
+
+    return `
+        <ul class="movement-list">
+            ${movements.map((movement) => `
+                <li class="movement-row">
+                    <div>
+                        <strong>${escapeHtml(movement.action)}</strong>
+                        <span>${escapeHtml(formatMovementDate(movement.timestamp))}</span>
+                        <span>${escapeHtml(movement.batchNumber || 'No Batch')} • Exp ${escapeHtml(formatExpiry(movement.expiryDate || '') || 'N/A')}</span>
+                    </div>
+                    <div class="movement-meta">
+                        <strong>${formatSignedQuantity(movement.quantity, movement.action)}</strong>
+                        <span>${escapeHtml(movement.storageRoom || movement.sourceDestination || 'Unknown')}</span>
+                        <span>${escapeHtml(movement.glAccount || 'Unassigned')}</span>
+                    </div>
+                </li>
+            `).join('')}
+        </ul>
+    `;
+}
+
+async function loadProductMovements(productKey) {
+    if (state.productMovements[productKey]) return;
+    state.movementLoadingKey = productKey;
+    render();
+
+    try {
+        const product = state.groupedProducts.find((item) => item.key === productKey);
+        if (!product) return;
+
+        const params = new URLSearchParams({
+            productKey,
+            barcode: product.barcode || '',
+            productCode: product.productCode || '',
+            limit: '30'
+        });
+        const response = await fetch(`${apiBaseUrl}/public-movements?${params.toString()}`);
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.message || payload.error || 'Unable to load movements.');
+        }
+        state.productMovements[productKey] = payload.items || [];
+    } catch (error) {
+        state.productMovements[productKey] = [];
+        showError(error.message || 'Unable to load movement history.');
+    } finally {
+        state.movementLoadingKey = null;
+        render();
+    }
+}
+
+function buildPublicReportUrl() {
+    const params = new URLSearchParams({
+        availability: state.availability,
+        storageRoom: state.storageRoom,
+        glAccount: state.glAccount,
+        query: state.query
+    });
+    return `${apiBaseUrl}/public-reports?${params.toString()}`;
+}
+
+function formatMovementDate(value) {
+    if (!value) return 'Unknown date';
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+}
+
+function formatSignedQuantity(quantity, action) {
+    const numeric = Number(quantity || 0);
+    if (String(action || '').toUpperCase() === 'DISPATCH') {
+        return `-${formatNumber(Math.abs(numeric))}`;
+    }
+    return `+${formatNumber(Math.abs(numeric))}`;
 }
 
 function renderProductCard(product) {
