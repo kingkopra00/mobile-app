@@ -23,9 +23,25 @@
                 <span class="sr-only">Search products</span>
                 <input id="searchInput" type="search" placeholder="Search by brand, generic, barcode, or product code">
             </label>
-            <label class="toggle-field">
-                <input id="stockOnlyToggle" type="checkbox" checked>
-                <span>In stock only</span>
+            <label class="filter-field">
+                <span>Availability</span>
+                <select id="availabilityFilter">
+                    <option value="in-stock">In stock only</option>
+                    <option value="all">In stock and out of stock</option>
+                    <option value="out-of-stock">Out of stock only</option>
+                </select>
+            </label>
+            <label class="filter-field">
+                <span>Storage Room</span>
+                <select id="storageFilter">
+                    <option value="all">All storage rooms</option>
+                </select>
+            </label>
+            <label class="filter-field">
+                <span>GL Account</span>
+                <select id="glAccountFilter">
+                    <option value="all">All GL accounts</option>
+                </select>
             </label>
         </section>
 
@@ -50,6 +66,8 @@
         </section>
 
         <section id="errorBanner" class="error-banner hidden" role="alert"></section>
+
+        <section id="detailPanel" class="detail-panel hidden" aria-live="polite"></section>
 
         <main id="inventoryGrid" class="inventory-grid" aria-live="polite"></main>
     </div>
